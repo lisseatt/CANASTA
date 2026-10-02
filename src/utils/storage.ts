@@ -248,3 +248,87 @@ export function resetToDemoData(): { prices: PriceRecord[]; shopping: ShoppingIt
     shopping: INITIAL_DEMO_SHOPPING,
   };
 }
+
+/**
+ * Borra todos los datos guardados en localStorage.
+ */
+export function clearAllStorageData(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY_PRICES);
+    localStorage.removeItem(STORAGE_KEY_SHOPPING);
+  } catch (error) {
+    console.error('Error al limpiar localStorage:', error);
+  }
+}
+
+export interface CanastaBackup {
+  app: 'CANASTA';
+  version: number;
+  exportedAt: string;
+  prices: PriceRecord[];
+  shopping: ShoppingItem[];
+}
+
+/**
+ * Genera y descarga un archivo .json con todos los precios y la lista de compras.
+ */
+export function exportBackupFile(): void {
+  try {
+    const prices = loadPriceRecords();
+    const shopping = loadShoppingList();
+
+    const backupData: CanastaBackup = {
+      app: 'CANASTA',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      prices,
+      shopping,
+    };
+
+    const jsonString = JSON.stringify(backupData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `canasta_respaldo_${dateStr}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error al exportar respaldo JSON:', error);
+    throw new Error('No se pudo generar el archivo de respaldo.');
+  }
+}
+
+/**
+ * Importa y valida datos desde un texto JSON recuperado de un archivo.
+ */
+export function importBackupFromJSON(jsonString: string): { prices: PriceRecord[]; shopping: ShoppingItem[] } {
+  try {
+    const data = JSON.parse(jsonString);
+
+    if (!data || typeof data !== 'object') {
+      throw new Error('El archivo no contiene un formato JSON válido.');
+    }
+
+    // Validación básica de estructura
+    const rawPrices = Array.isArray(data.prices) ? data.prices : [];
+    const rawShopping = Array.isArray(data.shopping) ? data.shopping : [];
+
+    // Guardamos en localStorage
+    savePriceRecords(rawPrices);
+    saveShoppingList(rawShopping);
+
+    return {
+      prices: rawPrices,
+      shopping: rawShopping,
+    };
+  } catch (error) {
+    console.error('Error al importar archivo de respaldo:', error);
+    throw error;
+  }
+}
+
