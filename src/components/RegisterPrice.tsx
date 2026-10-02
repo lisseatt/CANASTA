@@ -8,7 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { PriceRecord } from '../types';
 import { normalizeKey, formatCurrency, formatRelativeDate } from '../utils/formatters';
-import { PlusCircle, CheckCircle, Store, Tag, Sparkles, ArrowRight, Trash2 } from 'lucide-react';
+import { PlusCircle, CheckCircle, Store, Tag, Sparkles, ArrowRight, Trash2, Pencil, X } from 'lucide-react';
 
 interface RegisterPriceProps {
   prices: PriceRecord[];
@@ -27,6 +27,7 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
   const [storeName, setStoreName] = useState('');
   const [priceInput, setPriceInput] = useState('');
   const [unit, setUnit] = useState('');
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [feedbackMsg, setFeedbackMsg] = useState<{ text: string; productKey: string } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -54,6 +55,28 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
       .slice(0, 5);
   }, [prices]);
 
+  // Funciones para iniciar y cancelar edición
+  const handleStartEdit = (record: PriceRecord) => {
+    setEditingRecordId(record.id);
+    setProductName(record.productName);
+    setStoreName(record.storeName);
+    setPriceInput(record.price.toString());
+    setUnit(record.unit || '');
+    setErrorMsg(null);
+    setFeedbackMsg(null);
+    // Desplazamiento suave al formulario
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRecordId(null);
+    setProductName('');
+    setStoreName('');
+    setPriceInput('');
+    setUnit('');
+    setErrorMsg(null);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -77,7 +100,6 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
     // Si pasamos directamente `Number("1250,50")` da NaN.
     // Limpiamos los puntos de miles si existen y reemplazamos coma por punto decimal.
     let sanitizedPriceStr = priceInput.trim();
-    // Si contiene coma y punto (ej: 1.500,50), quitamos el punto y cambiamos la coma por punto
     if (sanitizedPriceStr.includes('.') && sanitizedPriceStr.includes(',')) {
       sanitizedPriceStr = sanitizedPriceStr.replace(/\./g, '').replace(',', '.');
     } else if (sanitizedPriceStr.includes(',')) {
@@ -94,15 +116,22 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
     const productKey = normalizeKey(cleanProductName);
     const storeKey = normalizeKey(cleanStoreName);
 
-    // ¡PUNTO CRÍTICO 3: EVITAR DUPLICADOS INCONSISTENTES EN LA MISMA TIENDA!
-    // Si el usuario vuelve a registrar la leche en la misma tienda con nuevo precio,
-    // debemos actualizar el ID existente en vez de crear 2 precios conflictivos para la misma tienda.
+    // ¡PUNTO CRÍTICO 3: CONSERVAR EL ID SI ESTAMOS EN MODO EDICIÓN!
+    // Si el usuario edita un registro (por ejemplo cambia el nombre de la tienda o el producto),
+    // DEBE conservarse el ID original (editingRecordId).
+    // De lo contrario, se crearía un registro nuevo duplicando el producto y dejando el anterior desactualizado.
     const existing = prices.find(
       (p) => p.productKey === productKey && p.storeKey === storeKey
     );
 
+    const recordId = editingRecordId
+      ? editingRecordId
+      : existing
+      ? existing.id
+      : 'rec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+
     const newRecord: PriceRecord = {
-      id: existing ? existing.id : 'rec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      id: recordId,
       productName: cleanProductName,
       productKey,
       storeName: cleanStoreName,
@@ -114,9 +143,14 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
 
     onSavePrice(newRecord);
 
-    // Feedback visual y reseteo suave (mantenemos la tienda si el usuario está cargando varios productos allí)
+    const wasEditing = Boolean(editingRecordId);
+    setEditingRecordId(null);
+
+    // Feedback visual y reseteo
     setFeedbackMsg({
-      text: existing
+      text: wasEditing
+        ? `Precio modificado: ${cleanProductName} en ${cleanStoreName} ahora cuesta ${formatCurrency(parsedPrice)}`
+        : existing
         ? `Precio actualizado para ${cleanProductName} en ${cleanStoreName} (${formatCurrency(parsedPrice)})`
         : `Registrado: ${cleanProductName} en ${cleanStoreName} por ${formatCurrency(parsedPrice)}`,
       productKey,
@@ -124,6 +158,9 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
     setProductName('');
     setPriceInput('');
     setUnit('');
+    if (wasEditing) {
+      setStoreName('');
+    }
 
     // Limpia el mensaje después de 6 segundos
     setTimeout(() => {
@@ -135,18 +172,41 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
     <div className="space-y-6">
       {/* Tarjeta principal del formulario */}
       <section className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-200/80">
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-neutral-100">
-          <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
-            <PlusCircle className="w-5 h-5" />
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-neutral-100">
+          <div className="flex items-center gap-2">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold ${
+              editingRecordId
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-emerald-100 text-emerald-800'
+            }`}>
+              {editingRecordId ? (
+                <Pencil className="w-5 h-5" />
+              ) : (
+                <PlusCircle className="w-5 h-5" />
+              )}
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-neutral-900 leading-tight">
+                {editingRecordId ? 'Modificar Precio' : 'Registrar Precio'}
+              </h2>
+              <p className="text-xs text-neutral-500">
+                {editingRecordId
+                  ? 'Editá el precio, producto o tienda asignada'
+                  : 'Anotá lo que cuesta en cada tienda de la cuadra'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-base font-semibold text-neutral-900 leading-tight">
-              Registrar Precio
-            </h2>
-            <p className="text-xs text-neutral-500">
-              Anotá lo que cuesta en cada tienda de la cuadra
-            </p>
-          </div>
+
+          {editingRecordId && (
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              className="text-xs text-neutral-600 hover:text-neutral-900 flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-neutral-200 hover:bg-neutral-50 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Cancelar</span>
+            </button>
+          )}
         </div>
 
         {errorMsg && (
@@ -291,10 +351,14 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
 
           <button
             type="submit"
-            className="w-full min-h-[46px] mt-2 bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] text-white font-medium text-sm rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all"
+            className={`w-full min-h-[46px] mt-2 text-white font-medium text-sm rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.99] ${
+              editingRecordId
+                ? 'bg-amber-600 hover:bg-amber-700'
+                : 'bg-emerald-700 hover:bg-emerald-800'
+            }`}
           >
             <CheckCircle className="w-4 h-4" />
-            <span>Guardar Precio</span>
+            <span>{editingRecordId ? 'Actualizar Precio' : 'Guardar Precio'}</span>
           </button>
         </form>
       </section>
@@ -316,53 +380,71 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
           </p>
         ) : (
           <div className="divide-y divide-neutral-100">
-            {recentRecords.map((r) => (
-              <div
-                key={r.id}
-                className="py-3 flex items-center justify-between gap-3 text-xs"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-neutral-900 truncate">
-                    {r.productName}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-neutral-500 text-[11px] mt-0.5">
-                    <Store className="w-3 h-3 text-neutral-400 shrink-0" />
-                    <span className="truncate">{r.storeName}</span>
-                    <span>·</span>
-                    <span className="text-neutral-400 shrink-0">
-                      {formatRelativeDate(r.updatedAt)}
-                    </span>
-                  </div>
-                </div>
+            {recentRecords.map((r) => {
+              const isBeingEdited = editingRecordId === r.id;
 
-                <div className="flex items-center gap-2.5 shrink-0">
-                  <div className="text-right">
-                    <span className="font-bold text-sm text-neutral-900 tabular-nums">
-                      {formatCurrency(r.price)}
-                    </span>
-                    {r.unit && (
-                      <div className="text-[10px] text-neutral-400">{r.unit}</div>
-                    )}
+              return (
+                <div
+                  key={r.id}
+                  className={`py-3 px-2 rounded-xl flex items-center justify-between gap-3 text-xs transition-colors ${
+                    isBeingEdited ? 'bg-amber-50/80 border border-amber-200' : ''
+                  }`}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-neutral-900 truncate">
+                      {r.productName}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-neutral-500 text-[11px] mt-0.5">
+                      <Store className="w-3 h-3 text-neutral-400 shrink-0" />
+                      <span className="truncate">{r.storeName}</span>
+                      <span>·</span>
+                      <span className="text-neutral-400 shrink-0">
+                        {formatRelativeDate(r.updatedAt)}
+                      </span>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onGoToCompare(r.productKey)}
-                    title="Comparar este producto"
-                    className="p-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
-                  >
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDeletePrice(r.id)}
-                    title="Eliminar este precio"
-                    className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right">
+                      <span className="font-bold text-sm text-neutral-900 tabular-nums">
+                        {formatCurrency(r.price)}
+                      </span>
+                      {r.unit && (
+                        <div className="text-[10px] text-neutral-400">{r.unit}</div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleStartEdit(r)}
+                      title="Editar este precio"
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        isBeingEdited
+                          ? 'text-amber-800 bg-amber-100 ring-1 ring-amber-400'
+                          : 'text-neutral-500 hover:text-amber-700 hover:bg-amber-50'
+                      }`}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onGoToCompare(r.productKey)}
+                      title="Comparar este producto"
+                      className="p-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+                    >
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeletePrice(r.id)}
+                      title="Eliminar este precio"
+                      className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
