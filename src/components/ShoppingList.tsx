@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  * 
  * CANASTA - Función 3: Armar la lista de compra con el total estimado.
+ * Ajustado para visibilidad al sol, texto >= 16px, etiquetas visibles y un solo botón principal.
  */
 
 import React, { useState, useMemo } from 'react';
@@ -11,15 +12,12 @@ import { formatCurrency, normalizeKey } from '../utils/formatters';
 import { 
   Plus, 
   Trash2, 
-  Check, 
   Store, 
   ShoppingBag, 
-  Sparkles, 
-  HelpCircle,
   CheckCircle2,
   Circle,
-  PlusCircle,
-  Minus
+  Minus,
+  AlertTriangle
 } from 'lucide-react';
 
 interface ShoppingListProps {
@@ -47,7 +45,6 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
   const [newQuantity, setNewQuantity] = useState(1);
   const [showSingleStoreTotals, setShowSingleStoreTotals] = useState(false);
 
-  // Mapeo de precios por productKey
   const productPricesMap = useMemo(() => {
     const map = new Map<string, PriceRecord[]>();
     prices.forEach((p) => {
@@ -58,14 +55,12 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
     return map;
   }, [prices]);
 
-  // Lista de todas las tiendas conocidas
   const allStores = useMemo(() => {
     const set = new Set<string>();
     prices.forEach((p) => set.add(p.storeName));
     return Array.from(set);
   }, [prices]);
 
-  // Lista de productos registrados en la app para el selector
   const registeredProducts = useMemo(() => {
     const map = new Map<string, string>();
     prices.forEach((p) => {
@@ -76,13 +71,6 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
     return Array.from(map.entries()).map(([key, name]) => ({ key, name }));
   }, [prices]);
 
-  /**
-   * CÁLCULO 1: Total estimado optimizado (comprando cada ítem en la tienda más barata).
-   * 
-   * ¡PUNTO CRÍTICO 1: PRODUCTOS SIN PRECIO REGISTRADO!
-   * Si el usuario agrega un ítem del cual no tenemos ningún precio registrado todavía,
-   * el cálculo del total no debe romperse con NaN. Debemos identificar ítems sin precio.
-   */
   const optimizedSummary = useMemo(() => {
     let totalEstimated = 0;
     let itemsWithoutPriceCount = 0;
@@ -95,13 +83,11 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
         return;
       }
 
-      // Ordenar por precio ascendente para encontrar la tienda más barata
       const sorted = [...records].sort((a, b) => a.price - b.price);
       const best = sorted[0];
       const itemSubtotal = best.price * item.quantity;
       totalEstimated += itemSubtotal;
 
-      // Agrupamos en el desglose de compras por tienda
       const storeGroup = storeSplits.get(best.storeName) || {
         storeName: best.storeName,
         items: [],
@@ -124,14 +110,6 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
     };
   }, [shoppingItems, productPricesMap]);
 
-  /**
-   * CÁLCULO 2: Total estimado si se compra TODO en una sola tienda.
-   * 
-   * ¡PUNTO CRÍTICO 2: COMPARAR MANZANAS CON MANZANAS!
-   * Si la Tienda A tiene precios para los 5 ítems pero la Tienda B solo tiene para 2,
-   * la suma de la Tienda B parecería erróneamente más barata si no indicamos
-   * que tiene productos faltantes.
-   */
   const singleStoreComparisons = useMemo(() => {
     if (shoppingItems.length === 0) return [];
 
@@ -164,14 +142,12 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
         differenceWithOptimal,
       };
     }).sort((a, b) => {
-      // Priorizar las tiendas que tienen todos los productos, luego ordenar por total
       if (a.isComplete && !b.isComplete) return -1;
       if (!a.isComplete && b.isComplete) return 1;
       return a.total - b.total;
     });
   }, [allStores, shoppingItems, productPricesMap, optimizedSummary.totalEstimated]);
 
-  // Manejar el submit del formulario de agregar a la lista
   const handleAddNewItem = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = selectedProductInput.trim();
@@ -187,50 +163,53 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
 
   return (
     <div className="space-y-5">
-      {/* Banner del TOTAL ESTIMADO de la lista */}
-      <section className="bg-neutral-900 text-white rounded-2xl p-5 shadow-sm">
-        <div className="flex items-center justify-between text-neutral-400 text-xs mb-1">
-          <span className="font-semibold uppercase tracking-wider text-emerald-400">
-            Total Estimado de Compra
+      {/* Tarjeta de TOTAL ESTIMADO con alto contraste */}
+      <section className="bg-neutral-950 text-white rounded-2xl p-5 shadow-lg border-2 border-neutral-800">
+        <div className="flex items-center justify-between text-base font-bold mb-1">
+          <span className="uppercase tracking-wider text-emerald-400">
+            Total Estimado
           </span>
-          <span>
-            {shoppingItems.length} {shoppingItems.length === 1 ? 'ítem' : 'ítems'} ({completedCount} listos)
+          <span className="text-neutral-300 tabular-nums">
+            {shoppingItems.length} {shoppingItems.length === 1 ? 'producto' : 'productos'} ({completedCount} listos)
           </span>
         </div>
 
-        <div className="flex items-baseline gap-2 my-1">
-          <div className="text-3xl font-extrabold tracking-tight tabular-nums text-white">
+        <div className="my-2">
+          <div className="text-4xl font-black tracking-tight tabular-nums text-white">
             {formatCurrency(optimizedSummary.totalEstimated)}
           </div>
-          <span className="text-xs text-emerald-400 font-medium">
-            (con mejor precio por tienda)
-          </span>
+          <div className="text-base text-emerald-400 font-bold mt-1">
+            Comprando cada cosa en su mejor precio
+          </div>
         </div>
 
         {optimizedSummary.itemsWithoutPriceCount > 0 ? (
-          <div className="mt-2 text-[11px] text-amber-300 bg-amber-950/60 border border-amber-800/60 rounded-lg p-2">
-            ⚠️ Hay {optimizedSummary.itemsWithoutPriceCount} artículo(s) sin precio registrado en la app. Su importe no está sumado.
+          <div className="mt-3 text-base text-amber-200 bg-amber-950 border-2 border-amber-600 rounded-xl p-3 flex items-start gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <span>
+              Hay {optimizedSummary.itemsWithoutPriceCount} producto(s) sin precio registrado en la app. Su importe no está sumado.
+            </span>
           </div>
         ) : shoppingItems.length > 0 ? (
-          <p className="text-xs text-neutral-400 mt-2">
-            Comprando cada cosa donde está más barata en tu cuadra.
+          <p className="text-base text-neutral-300 mt-2 font-medium">
+            Calculado dividiendo la compra entre las tiendas más baratas de tu cuadra.
           </p>
         ) : (
-          <p className="text-xs text-neutral-400 mt-2">
-            Tu lista está vacía. Sumá los productos que necesitas comprar.
+          <p className="text-base text-neutral-300 mt-2 font-medium">
+            Tu lista está vacía. Sumá lo que necesitás comprar para ver el total.
           </p>
         )}
 
-        {/* Toggle para ver comparativa de comprar todo en una sola tienda */}
+        {/* Botón secundario para alternar comparativa en una sola tienda */}
         {shoppingItems.length > 0 && allStores.length > 1 && (
-          <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center justify-between">
-            <span className="text-xs text-neutral-300">
-              ¿Preferís no recorrer varias tiendas?
+          <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center justify-between flex-wrap gap-2">
+            <span className="text-base text-neutral-300 font-medium">
+              ¿Querés ir a una sola tienda?
             </span>
             <button
               type="button"
               onClick={() => setShowSingleStoreTotals(!showSingleStoreTotals)}
-              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+              className="text-base font-extrabold text-emerald-400 hover:text-emerald-300 underline min-h-[44px] flex items-center"
             >
               {showSingleStoreTotals ? 'Ocultar totales por tienda' : 'Ver total en cada tienda'}
             </button>
@@ -238,51 +217,51 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
         )}
       </section>
 
-      {/* Tarjeta condicional: Comparación de comprar TODO en una sola tienda */}
+      {/* Sección condicional: Comparación de comprar todo en una sola tienda */}
       {showSingleStoreTotals && shoppingItems.length > 0 && (
-        <section className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-200/80 space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
-            <h3 className="text-xs font-bold text-neutral-800 uppercase tracking-wider">
+        <section className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border-2 border-neutral-300 space-y-3">
+          <div className="pb-2 border-b-2 border-neutral-200">
+            <h3 className="text-base font-extrabold text-neutral-950 uppercase tracking-wide">
               Total si comprás todo en una sola tienda
             </h3>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             {singleStoreComparisons.map((store) => (
               <div
                 key={store.storeName}
-                className="p-3 rounded-xl border border-neutral-200 bg-neutral-50/60 flex items-center justify-between gap-3 text-xs"
+                className="p-3.5 rounded-xl border-2 border-neutral-300 bg-neutral-50 flex items-center justify-between gap-3 text-base"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-neutral-900 flex items-center gap-1.5 truncate">
-                    <Store className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                  <div className="font-extrabold text-neutral-950 flex items-center gap-1.5 truncate">
+                    <Store className="w-4 h-4 text-neutral-700 shrink-0" />
                     <span className="truncate">{store.storeName}</span>
                   </div>
                   {store.isComplete ? (
-                    <div className="text-[11px] text-neutral-500 mt-0.5">
+                    <div className="text-base text-neutral-700 font-medium mt-0.5">
                       {store.differenceWithOptimal > 0 ? (
-                        <span className="text-amber-700">
-                          +{formatCurrency(store.differenceWithOptimal)} más caro que dividir la compra
+                        <span className="text-red-800 font-bold">
+                          +{formatCurrency(store.differenceWithOptimal)} más caro que dividir
                         </span>
                       ) : (
-                        <span className="text-emerald-700 font-semibold">
+                        <span className="text-emerald-900 font-extrabold">
                           ¡Mismo total que el óptimo!
                         </span>
                       )}
                     </div>
                   ) : (
-                    <div className="text-[11px] text-neutral-400 mt-0.5">
-                      Tiene precio para {store.availableItemsCount} de {shoppingItems.length} ítems
+                    <div className="text-base text-neutral-600 font-medium mt-0.5">
+                      Tiene precio para {store.availableItemsCount} de {shoppingItems.length}
                     </div>
                   )}
                 </div>
 
                 <div className="text-right shrink-0">
-                  <div className="text-sm font-bold text-neutral-900 tabular-nums">
+                  <div className="text-xl font-extrabold text-neutral-950 tabular-nums">
                     {formatCurrency(store.total)}
                   </div>
                   {!store.isComplete && (
-                    <span className="text-[10px] text-amber-600 font-medium">Incompleto</span>
+                    <span className="text-base text-amber-800 font-extrabold">Faltan precios</span>
                   )}
                 </div>
               </div>
@@ -291,60 +270,71 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
         </section>
       )}
 
-      {/* Formulario rápido para sumar a la lista */}
-      <section className="bg-white rounded-2xl p-4 shadow-sm border border-neutral-200/80">
-        <form onSubmit={handleAddNewItem} className="flex gap-2">
-          <div className="flex-1">
-            <input
-              type="text"
-              value={selectedProductInput}
-              onChange={(e) => setSelectedProductInput(e.target.value)}
-              placeholder="Agregar a la lista (ej: Leche, Yerba...)"
-              className="w-full px-3.5 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-              list="shopping-quick-datalist"
-            />
-            <datalist id="shopping-quick-datalist">
-              {registeredProducts.map((p) => (
-                <option key={p.key} value={p.name} />
-              ))}
-            </datalist>
+      {/* Formulario para agregar con ETIQUETAS VISIBLES y adaptado a 320px */}
+      <section className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border-2 border-neutral-300">
+        <form onSubmit={handleAddNewItem} className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-2">
+              <label htmlFor="shop-item-name" className="block text-base font-extrabold text-neutral-950 mb-1.5">
+                Producto a comprar <span className="text-red-700">*</span>
+              </label>
+              <input
+                id="shop-item-name"
+                type="text"
+                value={selectedProductInput}
+                onChange={(e) => setSelectedProductInput(e.target.value)}
+                placeholder="Ejemplo: Leche, Huevos, Yerba"
+                className="w-full min-h-[48px] px-3.5 py-3 text-base font-medium text-neutral-950 bg-white border-2 border-neutral-400 rounded-xl focus:outline-none focus:ring-3 focus:ring-emerald-700 focus:border-emerald-800"
+                list="shopping-quick-datalist"
+              />
+              <datalist id="shopping-quick-datalist">
+                {registeredProducts.map((p) => (
+                  <option key={p.key} value={p.name} />
+                ))}
+              </datalist>
+            </div>
+
+            <div>
+              <label htmlFor="shop-item-qty" className="block text-base font-extrabold text-neutral-950 mb-1.5">
+                Cantidad
+              </label>
+              <input
+                id="shop-item-qty"
+                type="number"
+                min="1"
+                max="99"
+                value={newQuantity}
+                onChange={(e) => setNewQuantity(parseInt(e.target.value) || 1)}
+                className="w-full min-h-[48px] px-3.5 py-3 text-center text-base font-extrabold text-neutral-950 bg-white border-2 border-neutral-400 rounded-xl tabular-nums"
+              />
+            </div>
           </div>
 
-          <div className="w-16">
-            <input
-              type="number"
-              min="1"
-              max="99"
-              value={newQuantity}
-              onChange={(e) => setNewQuantity(parseInt(e.target.value) || 1)}
-              className="w-full px-2 py-2.5 text-center text-xs font-semibold bg-neutral-50 border border-neutral-200 rounded-xl tabular-nums"
-              title="Cantidad"
-            />
-          </div>
-
+          {/* ÚNICO BOTÓN PRINCIPAL DE ESTA PANTALLA */}
           <button
             type="submit"
-            className="min-h-[42px] px-3.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center shrink-0 transition-colors"
+            className="w-full min-h-[50px] bg-emerald-800 hover:bg-emerald-900 active:scale-[0.99] text-white rounded-xl text-base font-extrabold flex items-center justify-center gap-2 transition-colors shadow-md border-2 border-emerald-950"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-5 h-5 text-white" />
+            <span>Agregar a la lista</span>
           </button>
         </form>
 
-        {/* Sugerencias rápidas de productos cargados que no están en la lista */}
+        {/* Sugerencias secundarias de productos ya registrados */}
         {registeredProducts.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5 items-center">
-            <span className="text-[11px] text-neutral-400">Sugeridos:</span>
+          <div className="mt-4 pt-3 border-t-2 border-neutral-100 flex flex-wrap gap-2 items-center">
+            <span className="text-base font-bold text-neutral-700">Sugeridos:</span>
             {registeredProducts
               .filter((p) => !shoppingItems.some((item) => item.productKey === p.key))
-              .slice(0, 4)
+              .slice(0, 3)
               .map((p) => (
                 <button
                   key={p.key}
                   type="button"
                   onClick={() => onAddItem(p.key, p.name, 1)}
-                  className="text-[11px] px-2 py-1 bg-neutral-100 hover:bg-emerald-50 hover:text-emerald-800 text-neutral-700 rounded-md transition-colors flex items-center gap-1"
+                  className="min-h-[44px] text-base font-bold px-3 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border-2 border-neutral-300 rounded-xl transition-colors flex items-center gap-1.5"
                 >
-                  <Plus className="w-2.5 h-2.5" />
+                  <Plus className="w-4 h-4 text-neutral-700" />
                   <span>{p.name}</span>
                 </button>
               ))}
@@ -353,29 +343,35 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
       </section>
 
       {/* Lista interactiva de compras */}
-      <section className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-200/80">
-        <div className="flex items-center justify-between pb-3 border-b border-neutral-100 mb-3">
-          <h3 className="text-xs font-bold text-neutral-800 uppercase tracking-wider">
+      <section className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border-2 border-neutral-300">
+        <div className="flex items-center justify-between pb-3 border-b-2 border-neutral-200 mb-3">
+          <h3 className="text-base font-extrabold text-neutral-950 uppercase tracking-wide">
             Artículos a Comprar
           </h3>
           {completedCount > 0 && (
             <button
               type="button"
               onClick={onClearCompleted}
-              className="text-[11px] text-neutral-500 hover:text-red-600 transition-colors"
+              className="min-h-[44px] px-2.5 text-base font-bold text-red-800 hover:text-red-950 transition-colors"
             >
-              Borrar comprados ({completedCount})
+              Borrar listos ({completedCount})
             </button>
           )}
         </div>
 
+        {/* ESTADO VACÍO CLARO CON FRASE DE INVITACIÓN */}
         {shoppingItems.length === 0 ? (
-          <div className="py-8 text-center text-neutral-400 text-xs">
-            <ShoppingBag className="w-8 h-8 text-neutral-300 mx-auto mb-2" />
-            <span>No tenés productos en la lista todavía.</span>
+          <div className="py-8 px-2 text-center space-y-2">
+            <ShoppingBag className="w-12 h-12 text-neutral-400 mx-auto" />
+            <p className="text-base font-extrabold text-neutral-900">
+              Tu lista de compras está vacía.
+            </p>
+            <p className="text-base text-neutral-700 max-w-xs mx-auto">
+              Escribí arriba el primer producto que necesitás comprar para calcular el costo total estimado de tu cuadra.
+            </p>
           </div>
         ) : (
-          <div className="divide-y divide-neutral-100">
+          <div className="divide-y-2 divide-neutral-200">
             {shoppingItems.map((item) => {
               const records = productPricesMap.get(item.productKey) || [];
               const sorted = [...records].sort((a, b) => a.price - b.price);
@@ -385,92 +381,91 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
               return (
                 <div
                   key={item.id}
-                  className={`py-3.5 flex items-center justify-between gap-3 transition-opacity ${
-                    item.completed ? 'opacity-50' : 'opacity-100'
+                  className={`py-3.5 flex flex-col gap-2 transition-opacity ${
+                    item.completed ? 'opacity-60 bg-neutral-50' : 'opacity-100'
                   }`}
                 >
-                  {/* Checkbox táctil amplio */}
-                  <button
-                    type="button"
-                    onClick={() => onToggleComplete(item.id)}
-                    className="min-h-[44px] min-w-[36px] flex items-center justify-center shrink-0"
-                    title={item.completed ? 'Marcar como pendiente' : 'Marcar como comprado'}
-                  >
-                    {item.completed ? (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    ) : (
-                      <Circle className="w-5 h-5 text-neutral-300 hover:text-neutral-400" />
-                    )}
-                  </button>
-
-                  {/* Nombre y detalles de tienda recomendada */}
-                  <div className="min-w-0 flex-1">
-                    <div
-                      className={`text-xs font-semibold text-neutral-900 truncate ${
-                        item.completed ? 'line-through text-neutral-500' : ''
-                      }`}
+                  <div className="flex items-start justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => onToggleComplete(item.id)}
+                      className="min-h-[48px] min-w-[48px] flex items-center justify-center shrink-0 border-2 border-neutral-300 rounded-xl bg-white hover:bg-neutral-50"
+                      title={item.completed ? 'Marcar como pendiente' : 'Marcar como comprado'}
                     >
-                      {item.productName}
+                      {item.completed ? (
+                        <CheckCircle2 className="w-6 h-6 text-emerald-800" />
+                      ) : (
+                        <Circle className="w-6 h-6 text-neutral-500" />
+                      )}
+                    </button>
+
+                    <div className="min-w-0 flex-1">
+                      <div
+                        className={`text-base font-extrabold text-neutral-950 ${
+                          item.completed ? 'line-through text-neutral-600' : ''
+                        }`}
+                      >
+                        {item.productName}
+                      </div>
+
+                      {bestRecord ? (
+                        <div className="text-base text-neutral-700 font-medium mt-0.5">
+                          En: <strong className="text-emerald-950 font-extrabold">{bestRecord.storeName}</strong> ({formatCurrency(bestRecord.price)} c/u)
+                        </div>
+                      ) : (
+                        <div className="text-base text-amber-800 font-bold mt-0.5 flex items-center gap-1.5">
+                          <span>Sin precio guardado</span>
+                          <button
+                            type="button"
+                            onClick={onGoToRegister}
+                            className="underline font-extrabold text-neutral-950"
+                          >
+                            Anotar
+                          </button>
+                        </div>
+                      )}
                     </div>
 
-                    {bestRecord ? (
-                      <div className="text-[11px] text-neutral-500 mt-0.5 flex items-center gap-1.5 truncate">
-                        <span>Más barato en:</span>
-                        <strong className="text-emerald-700 font-semibold truncate">
-                          {bestRecord.storeName}
-                        </strong>
-                        <span className="tabular-nums">({formatCurrency(bestRecord.price)} c/u)</span>
+                    <div className="text-right shrink-0">
+                      <div className="text-lg font-extrabold text-neutral-950 tabular-nums">
+                        {estimatedItemTotal > 0 ? formatCurrency(estimatedItemTotal) : '-'}
                       </div>
-                    ) : (
-                      <div className="text-[11px] text-amber-600 mt-0.5 flex items-center gap-1">
-                        <span>Sin precio guardado</span>
-                        <button
-                          type="button"
-                          onClick={onGoToRegister}
-                          className="underline hover:text-amber-800"
-                        >
-                          Cargar
-                        </button>
-                      </div>
-                    )}
+                    </div>
                   </div>
 
-                  {/* Controles de cantidad (+ / -) y subtotal */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="flex items-center bg-neutral-100 rounded-lg p-0.5">
+                  {/* Controles secundarios de cantidad y eliminación */}
+                  <div className="flex items-center justify-between pt-1 border-t border-neutral-100 pl-14">
+                    <div className="flex items-center gap-1 bg-neutral-100 border-2 border-neutral-300 rounded-xl p-1">
                       <button
                         type="button"
                         onClick={() => onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
                         disabled={item.quantity <= 1}
-                        className="w-7 h-7 flex items-center justify-center text-neutral-600 disabled:opacity-30 hover:bg-neutral-200 rounded transition-colors"
+                        className="min-h-[40px] min-w-[40px] flex items-center justify-center text-neutral-900 disabled:opacity-30 hover:bg-neutral-200 rounded-lg transition-colors font-bold"
+                        title="Menos"
                       >
-                        <Minus className="w-3 h-3" />
+                        <Minus className="w-4 h-4" />
                       </button>
-                      <span className="w-6 text-center text-xs font-bold text-neutral-800 tabular-nums">
+                      <span className="w-8 text-center text-base font-extrabold text-neutral-950 tabular-nums">
                         {item.quantity}
                       </span>
                       <button
                         type="button"
                         onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                        className="w-7 h-7 flex items-center justify-center text-neutral-600 hover:bg-neutral-200 rounded transition-colors"
+                        className="min-h-[40px] min-w-[40px] flex items-center justify-center text-neutral-900 hover:bg-neutral-200 rounded-lg transition-colors font-bold"
+                        title="Más"
                       >
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-4 h-4" />
                       </button>
-                    </div>
-
-                    <div className="text-right min-w-[65px]">
-                      <div className="text-xs font-bold text-neutral-900 tabular-nums">
-                        {estimatedItemTotal > 0 ? formatCurrency(estimatedItemTotal) : '-'}
-                      </div>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => onRemoveItem(item.id)}
-                      className="p-1.5 text-neutral-400 hover:text-red-600 transition-colors"
+                      className="min-h-[44px] px-3 py-2 text-base font-bold text-red-800 hover:text-red-950 rounded-xl transition-colors flex items-center gap-1"
                       title="Eliminar de la lista"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
+                      <span>Quitar</span>
                     </button>
                   </div>
                 </div>
@@ -480,20 +475,20 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
         )}
       </section>
 
-      {/* Hoja de ruta de compras por tienda: resuelve ir a las 3 tiendas de la cuadra con qué comprar en cada una */}
+      {/* Ruta de compra por tienda */}
       {optimizedSummary.storeSplits.length > 0 && (
-        <section className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-200/80 space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
+        <section className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border-2 border-neutral-300 space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b-2 border-neutral-200">
             <div>
-              <h3 className="text-xs font-bold text-neutral-800 uppercase tracking-wider">
-                Ruta de Compra Recomendada
+              <h3 className="text-base font-extrabold text-neutral-950 uppercase tracking-wide">
+                Ruta de Compra de la Cuadra
               </h3>
-              <p className="text-[11px] text-neutral-500">
-                Qué conviene comprar en cada tienda de la cuadra
+              <p className="text-base text-neutral-700 font-medium">
+                Qué conviene comprar en cada parada
               </p>
             </div>
-            <span className="text-xs font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
-              {optimizedSummary.storeSplits.length} paradas
+            <span className="text-base font-extrabold text-emerald-950 bg-emerald-200 border border-emerald-700 px-3 py-1 rounded-xl">
+              {optimizedSummary.storeSplits.length} {optimizedSummary.storeSplits.length === 1 ? 'parada' : 'paradas'}
             </span>
           </div>
 
@@ -501,25 +496,25 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({
             {optimizedSummary.storeSplits.map((group) => (
               <div
                 key={group.storeName}
-                className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-2"
+                className="p-4 rounded-xl border-2 border-neutral-300 bg-neutral-50 space-y-2"
               >
-                <div className="flex items-center justify-between text-xs">
-                  <div className="font-bold text-neutral-900 flex items-center gap-1.5">
-                    <Store className="w-3.5 h-3.5 text-emerald-700" />
+                <div className="flex items-center justify-between text-base">
+                  <div className="font-extrabold text-neutral-950 flex items-center gap-1.5">
+                    <Store className="w-4 h-4 text-emerald-800" />
                     <span>{group.storeName}</span>
                   </div>
-                  <span className="font-bold text-emerald-800 tabular-nums">
+                  <span className="font-extrabold text-emerald-950 tabular-nums">
                     Total: {formatCurrency(group.total)}
                   </span>
                 </div>
 
-                <ul className="text-[11px] text-neutral-600 divide-y divide-neutral-200/60 pl-2">
+                <ul className="text-base text-neutral-800 divide-y divide-neutral-200 pl-2">
                   {group.items.map((subItem, idx) => (
-                    <li key={idx} className="py-1 flex justify-between items-center">
+                    <li key={idx} className="py-1.5 flex justify-between items-center">
                       <span>
                         {subItem.qty}x {subItem.name}
                       </span>
-                      <span className="font-medium text-neutral-700 tabular-nums">
+                      <span className="font-extrabold text-neutral-950 tabular-nums">
                         {formatCurrency(subItem.subtotal)}
                       </span>
                     </li>

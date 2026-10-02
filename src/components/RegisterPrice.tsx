@@ -3,12 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  * 
  * CANASTA - Función 1: Registrar precio por producto y tienda.
+ * Ajustado para visibilidad al sol, texto >= 16px, etiquetas visibles y uso con una mano desde 320px.
  */
 
 import React, { useState, useMemo } from 'react';
 import { PriceRecord } from '../types';
 import { normalizeKey, formatCurrency, formatRelativeDate } from '../utils/formatters';
-import { PlusCircle, CheckCircle, Store, Tag, Sparkles, ArrowRight, Trash2, Pencil, X } from 'lucide-react';
+import { PlusCircle, CheckCircle, Store, ArrowRight, Trash2, Pencil, X, AlertTriangle } from 'lucide-react';
 
 interface RegisterPriceProps {
   prices: PriceRecord[];
@@ -64,7 +65,6 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
     setUnit(record.unit || '');
     setErrorMsg(null);
     setFeedbackMsg(null);
-    // Desplazamiento suave al formulario
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -81,24 +81,19 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
     e.preventDefault();
     setErrorMsg(null);
 
-    // ¡PUNTO CRÍTICO 1: VALIDACIÓN Y SANITIZACIÓN!
-    // Alguien suele olvidarse del trim y guardar registros vacíos o con espacios invisibles.
     const cleanProductName = productName.trim();
     const cleanStoreName = storeName.trim();
 
+    // Mensajes de error claros, en español y sin tecnicismos
     if (!cleanProductName) {
-      setErrorMsg('Por favor ingresá el nombre del producto.');
+      setErrorMsg('Falta escribir el nombre del producto.');
       return;
     }
     if (!cleanStoreName) {
-      setErrorMsg('Por favor ingresá el nombre de la tienda o almacén.');
+      setErrorMsg('Falta escribir el nombre de la tienda o almacén.');
       return;
     }
 
-    // ¡PUNTO CRÍTICO 2: PARSEO DE PRECIOS DECIMALES!
-    // En teclados móviles hispanos, los usuarios suelen tipear coma (ej: 1250,50 o 1.250).
-    // Si pasamos directamente `Number("1250,50")` da NaN.
-    // Limpiamos los puntos de miles si existen y reemplazamos coma por punto decimal.
     let sanitizedPriceStr = priceInput.trim();
     if (sanitizedPriceStr.includes('.') && sanitizedPriceStr.includes(',')) {
       sanitizedPriceStr = sanitizedPriceStr.replace(/\./g, '').replace(',', '.');
@@ -109,17 +104,13 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
     const parsedPrice = parseFloat(sanitizedPriceStr);
 
     if (isNaN(parsedPrice) || parsedPrice <= 0) {
-      setErrorMsg('Por favor ingresá un precio válido mayor a 0.');
+      setErrorMsg('Ingresá un precio en números que sea mayor a cero.');
       return;
     }
 
     const productKey = normalizeKey(cleanProductName);
     const storeKey = normalizeKey(cleanStoreName);
 
-    // ¡PUNTO CRÍTICO 3: CONSERVAR EL ID SI ESTAMOS EN MODO EDICIÓN!
-    // Si el usuario edita un registro (por ejemplo cambia el nombre de la tienda o el producto),
-    // DEBE conservarse el ID original (editingRecordId).
-    // De lo contrario, se crearía un registro nuevo duplicando el producto y dejando el anterior desactualizado.
     const existing = prices.find(
       (p) => p.productKey === productKey && p.storeKey === storeKey
     );
@@ -146,13 +137,13 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
     const wasEditing = Boolean(editingRecordId);
     setEditingRecordId(null);
 
-    // Feedback visual y reseteo
+    // Mensaje de éxito claro, sin términos técnicos
     setFeedbackMsg({
       text: wasEditing
-        ? `Precio modificado: ${cleanProductName} en ${cleanStoreName} ahora cuesta ${formatCurrency(parsedPrice)}`
+        ? `Precio modificado: ${cleanProductName} en ${cleanStoreName} ahora vale ${formatCurrency(parsedPrice)}`
         : existing
         ? `Precio actualizado para ${cleanProductName} en ${cleanStoreName} (${formatCurrency(parsedPrice)})`
-        : `Registrado: ${cleanProductName} en ${cleanStoreName} por ${formatCurrency(parsedPrice)}`,
+        : `Guardado: ${cleanProductName} en ${cleanStoreName} por ${formatCurrency(parsedPrice)}`,
       productKey,
     });
     setProductName('');
@@ -162,7 +153,6 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
       setStoreName('');
     }
 
-    // Limpia el mensaje después de 6 segundos
     setTimeout(() => {
       setFeedbackMsg(null);
     }, 6000);
@@ -170,100 +160,104 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Tarjeta principal del formulario */}
-      <section className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-200/80">
-        <div className="flex items-center justify-between mb-4 pb-3 border-b border-neutral-100">
+      {/* Tarjeta principal del formulario con alto contraste */}
+      <section className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border-2 border-neutral-300">
+        <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-neutral-200">
           <div className="flex items-center gap-2">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold ${
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
               editingRecordId
-                ? 'bg-amber-100 text-amber-800'
-                : 'bg-emerald-100 text-emerald-800'
+                ? 'bg-amber-100 text-amber-950 border-2 border-amber-500'
+                : 'bg-emerald-100 text-emerald-950 border-2 border-emerald-600'
             }`}>
               {editingRecordId ? (
-                <Pencil className="w-5 h-5" />
+                <Pencil className="w-5 h-5 text-amber-900" />
               ) : (
-                <PlusCircle className="w-5 h-5" />
+                <PlusCircle className="w-5 h-5 text-emerald-900" />
               )}
             </div>
             <div>
-              <h2 className="text-base font-semibold text-neutral-900 leading-tight">
+              <h2 className="text-xl font-extrabold text-neutral-950 leading-tight">
                 {editingRecordId ? 'Modificar Precio' : 'Registrar Precio'}
               </h2>
-              <p className="text-xs text-neutral-500">
+              <p className="text-base text-neutral-700 font-medium">
                 {editingRecordId
-                  ? 'Editá el precio, producto o tienda asignada'
-                  : 'Anotá lo que cuesta en cada tienda de la cuadra'}
+                  ? 'Cambiá el precio o la tienda asignada'
+                  : 'Anotá lo que cuesta en cada tienda'}
               </p>
             </div>
           </div>
 
+          {/* Botón secundario para cancelar edición */}
           {editingRecordId && (
             <button
               type="button"
               onClick={handleCancelEdit}
-              className="text-xs text-neutral-600 hover:text-neutral-900 flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-neutral-200 hover:bg-neutral-50 transition-colors"
+              className="min-h-[44px] px-3 py-2 text-base font-bold text-neutral-900 bg-neutral-100 hover:bg-neutral-200 border-2 border-neutral-400 rounded-xl flex items-center gap-1.5 transition-colors"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4 text-neutral-700" />
               <span>Cancelar</span>
             </button>
           )}
         </div>
 
+        {/* Mensaje de error visible, con texto grande y alto contraste */}
         {errorMsg && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2">
-            <span className="font-bold">Error:</span>
+          <div className="mb-4 p-4 bg-red-100 border-2 border-red-700 text-red-950 text-base font-bold rounded-xl flex items-start gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-red-800 shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>
         )}
 
+        {/* Mensaje de éxito visible con texto grande y alto contraste */}
         {feedbackMsg && (
-          <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-xs text-emerald-800 font-medium">
-              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="mb-4 p-4 bg-emerald-100 border-2 border-emerald-800 text-emerald-950 rounded-xl flex flex-col gap-2.5">
+            <div className="flex items-center gap-2 text-base font-extrabold">
+              <CheckCircle className="w-5 h-5 text-emerald-800 shrink-0" />
               <span>{feedbackMsg.text}</span>
             </div>
+            {/* Botón secundario de acceso a la comparativa */}
             <button
               type="button"
               onClick={() => onGoToCompare(feedbackMsg.productKey)}
-              className="inline-flex items-center justify-between text-xs font-semibold text-emerald-700 hover:text-emerald-900 pt-1 border-t border-emerald-200/60"
+              className="min-h-[44px] px-3 py-2 bg-white hover:bg-emerald-50 text-emerald-950 border-2 border-emerald-700 text-base font-bold rounded-xl flex items-center justify-between transition-colors"
             >
               <span>Ver comparativa de este producto</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-4 h-4 text-emerald-900" />
             </button>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Campo: Producto */}
+          {/* Campo 1: Producto con etiqueta visible obligatoria */}
           <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-              Producto o artículo <span className="text-red-500">*</span>
+            <label htmlFor="reg-product-name" className="block text-base font-extrabold text-neutral-950 mb-1.5">
+              Producto o artículo <span className="text-red-700">*</span>
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={productName}
-                onChange={(e) => setProductName(e.target.value)}
-                placeholder="Ej: Leche entera 1L, Arroz largo..."
-                className="w-full px-3.5 py-2.5 text-sm bg-neutral-50 border border-neutral-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                list="products-datalist"
-              />
-              <datalist id="products-datalist">
-                {knownProducts.map((p) => (
-                  <option key={p.key} value={p.name} />
-                ))}
-              </datalist>
-            </div>
-            {/* Sugerencias rápidas táctiles para evitar tipear de más en móvil */}
+            <input
+              id="reg-product-name"
+              type="text"
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              placeholder="Ejemplo: Leche entera 1L"
+              className="w-full min-h-[48px] px-3.5 py-3 text-base font-medium text-neutral-950 bg-white border-2 border-neutral-400 rounded-xl focus:outline-none focus:ring-3 focus:ring-emerald-700 focus:border-emerald-800 transition-all"
+              list="products-datalist"
+            />
+            <datalist id="products-datalist">
+              {knownProducts.map((p) => (
+                <option key={p.key} value={p.name} />
+              ))}
+            </datalist>
+
+            {/* Botones secundarios de sugerencias de productos */}
             {knownProducts.length > 0 && !productName && (
-              <div className="mt-2 flex flex-wrap gap-1.5 items-center">
-                <span className="text-[11px] text-neutral-400">Existentes:</span>
-                {knownProducts.slice(0, 4).map((p) => (
+              <div className="mt-2.5 flex flex-wrap gap-2 items-center">
+                <span className="text-base font-bold text-neutral-700">Ya cargados:</span>
+                {knownProducts.slice(0, 3).map((p) => (
                   <button
                     key={p.key}
                     type="button"
                     onClick={() => setProductName(p.name)}
-                    className="text-[11px] px-2 py-1 bg-neutral-100 text-neutral-700 hover:bg-neutral-200 rounded-md transition-colors"
+                    className="min-h-[44px] text-base font-bold px-3 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border-2 border-neutral-300 rounded-xl transition-colors"
                   >
                     {p.name}
                   </button>
@@ -272,39 +266,39 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
             )}
           </div>
 
-          {/* Campo: Tienda */}
+          {/* Campo 2: Tienda con etiqueta visible obligatoria */}
           <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-              Tienda / Almacén / Super <span className="text-red-500">*</span>
+            <label htmlFor="reg-store-name" className="block text-base font-extrabold text-neutral-950 mb-1.5">
+              Tienda o almacén <span className="text-red-700">*</span>
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={storeName}
-                onChange={(e) => setStoreName(e.target.value)}
-                placeholder="Ej: Supermercado Norte, Almacén Don Tito..."
-                className="w-full px-3.5 py-2.5 text-sm bg-neutral-50 border border-neutral-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                list="stores-datalist"
-              />
-              <datalist id="stores-datalist">
-                {knownStores.map((s) => (
-                  <option key={s} value={s} />
-                ))}
-              </datalist>
-            </div>
-            {/* Botones de selección rápida de tiendas existentes */}
+            <input
+              id="reg-store-name"
+              type="text"
+              value={storeName}
+              onChange={(e) => setStoreName(e.target.value)}
+              placeholder="Ejemplo: Almacén Don Tito"
+              className="w-full min-h-[48px] px-3.5 py-3 text-base font-medium text-neutral-950 bg-white border-2 border-neutral-400 rounded-xl focus:outline-none focus:ring-3 focus:ring-emerald-700 focus:border-emerald-800 transition-all"
+              list="stores-datalist"
+            />
+            <datalist id="stores-datalist">
+              {knownStores.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+
+            {/* Botones secundarios de selección rápida de tiendas */}
             {knownStores.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5 items-center">
-                <span className="text-[11px] text-neutral-400">Tiendas:</span>
+              <div className="mt-2.5 flex flex-wrap gap-2 items-center">
+                <span className="text-base font-bold text-neutral-700">Tiendas:</span>
                 {knownStores.map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => setStoreName(s)}
-                    className={`text-[11px] px-2.5 py-1 rounded-md transition-colors ${
+                    className={`min-h-[44px] text-base font-bold px-3 py-2 rounded-xl border-2 transition-colors ${
                       storeName === s
-                        ? 'bg-emerald-600 text-white font-medium'
-                        : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                        ? 'bg-neutral-900 text-white border-neutral-900'
+                        : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border-neutral-300'
                     }`}
                   >
                     {s}
@@ -314,132 +308,144 @@ export const RegisterPrice: React.FC<RegisterPriceProps> = ({
             )}
           </div>
 
-          {/* Fila: Precio y Presentación */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Campo 3 y 4: Precio y Unidad (diseñado para 320px en columna) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                Precio actual <span className="text-red-500">*</span>
+              <label htmlFor="reg-product-price" className="block text-base font-extrabold text-neutral-950 mb-1.5">
+                Precio actual <span className="text-red-700">*</span>
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-2.5 text-neutral-400 font-semibold text-sm">
+                <span className="absolute left-3.5 top-3 text-neutral-700 font-extrabold text-base">
                   $
                 </span>
                 <input
+                  id="reg-product-price"
                   type="text"
                   inputMode="decimal"
                   value={priceInput}
                   onChange={(e) => setPriceInput(e.target.value)}
                   placeholder="1250"
-                  className="w-full pl-7 pr-3 py-2.5 text-sm font-semibold bg-neutral-50 border border-neutral-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent tabular-nums"
+                  className="w-full min-h-[48px] pl-8 pr-3.5 py-3 text-base font-extrabold text-neutral-950 bg-white border-2 border-neutral-400 rounded-xl focus:outline-none focus:ring-3 focus:ring-emerald-700 focus:border-emerald-800 tabular-nums"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                Presentación / Unidad
+              <label htmlFor="reg-product-unit" className="block text-base font-extrabold text-neutral-950 mb-1.5">
+                Presentación o tamaño (opcional)
               </label>
               <input
+                id="reg-product-unit"
                 type="text"
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
-                placeholder="1 Litro, 500g..."
-                className="w-full px-3 py-2.5 text-sm bg-neutral-50 border border-neutral-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                placeholder="Ejemplo: 1 Litro, 500g"
+                className="w-full min-h-[48px] px-3.5 py-3 text-base font-medium text-neutral-950 bg-white border-2 border-neutral-400 rounded-xl focus:outline-none focus:ring-3 focus:ring-emerald-700 focus:border-emerald-800"
               />
             </div>
           </div>
 
+          {/* ÚNICO BOTÓN PRINCIPAL DE ESTA PANTALLA */}
           <button
             type="submit"
-            className={`w-full min-h-[46px] mt-2 text-white font-medium text-sm rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.99] ${
-              editingRecordId
-                ? 'bg-amber-600 hover:bg-amber-700'
-                : 'bg-emerald-700 hover:bg-emerald-800'
-            }`}
+            className="w-full min-h-[52px] mt-3 bg-emerald-800 hover:bg-emerald-900 active:scale-[0.99] text-white font-extrabold text-lg rounded-xl flex items-center justify-center gap-2 shadow-md border-2 border-emerald-950 transition-all"
           >
-            <CheckCircle className="w-4 h-4" />
+            <CheckCircle className="w-5 h-5 text-white" />
             <span>{editingRecordId ? 'Actualizar Precio' : 'Guardar Precio'}</span>
           </button>
         </form>
       </section>
 
       {/* Sección: Últimos precios guardados */}
-      <section className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-200/80">
-        <div className="flex items-center justify-between mb-3 pb-2 border-b border-neutral-100">
-          <h3 className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
-            Últimos Precios Registrados
+      <section className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border-2 border-neutral-300">
+        <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-neutral-200">
+          <h3 className="text-base font-extrabold text-neutral-950 uppercase tracking-wide">
+            Últimos Precios Guardados
           </h3>
-          <span className="text-[11px] text-neutral-400">
-            Total cargados: {prices.length}
+          <span className="text-base font-bold text-neutral-700 tabular-nums">
+            Total: {prices.length}
           </span>
         </div>
 
+        {/* ESTADO VACÍO CLARO CON FRASE DE INVITACIÓN */}
         {recentRecords.length === 0 ? (
-          <p className="text-xs text-neutral-400 py-4 text-center">
-            No hay precios registrados todavía.
-          </p>
+          <div className="py-8 px-2 text-center space-y-2">
+            <Store className="w-12 h-12 text-neutral-400 mx-auto" />
+            <p className="text-base font-extrabold text-neutral-900">
+              Todavía no anotaste ningún precio en tu cuadra.
+            </p>
+            <p className="text-base text-neutral-700 max-w-xs mx-auto">
+              Escribí arriba el primer producto que quieras comparar y guardalo para ver la diferencia entre tiendas.
+            </p>
+          </div>
         ) : (
-          <div className="divide-y divide-neutral-100">
+          <div className="divide-y-2 divide-neutral-200">
             {recentRecords.map((r) => {
               const isBeingEdited = editingRecordId === r.id;
 
               return (
                 <div
                   key={r.id}
-                  className={`py-3 px-2 rounded-xl flex items-center justify-between gap-3 text-xs transition-colors ${
-                    isBeingEdited ? 'bg-amber-50/80 border border-amber-200' : ''
+                  className={`py-3.5 px-2 rounded-xl flex flex-col gap-2 transition-colors ${
+                    isBeingEdited ? 'bg-amber-50 border-2 border-amber-500' : ''
                   }`}
                 >
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-neutral-900 truncate">
-                      {r.productName}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-extrabold text-base text-neutral-950 leading-snug">
+                        {r.productName}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-neutral-800 text-base font-medium mt-1">
+                        <Store className="w-4 h-4 text-neutral-700 shrink-0" />
+                        <span className="font-bold">{r.storeName}</span>
+                        <span>·</span>
+                        <span className="text-neutral-700">{formatRelativeDate(r.updatedAt)}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-neutral-500 text-[11px] mt-0.5">
-                      <Store className="w-3 h-3 text-neutral-400 shrink-0" />
-                      <span className="truncate">{r.storeName}</span>
-                      <span>·</span>
-                      <span className="text-neutral-400 shrink-0">
-                        {formatRelativeDate(r.updatedAt)}
-                      </span>
+
+                    <div className="text-right shrink-0">
+                      <div className="font-extrabold text-xl text-neutral-950 tabular-nums">
+                        {formatCurrency(r.price)}
+                      </div>
+                      {r.unit && (
+                        <div className="text-base font-semibold text-neutral-700">{r.unit}</div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="text-right">
-                      <span className="font-bold text-sm text-neutral-900 tabular-nums">
-                        {formatCurrency(r.price)}
-                      </span>
-                      {r.unit && (
-                        <div className="text-[10px] text-neutral-400">{r.unit}</div>
-                      )}
-                    </div>
+                  {/* Fila de botones secundarios cómodos para una sola mano */}
+                  <div className="flex items-center justify-end gap-2 pt-1 border-t border-neutral-100">
                     <button
                       type="button"
                       onClick={() => handleStartEdit(r)}
                       title="Editar este precio"
-                      className={`p-1.5 rounded-lg transition-colors ${
+                      className={`min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl border-2 font-bold text-base flex items-center justify-center gap-1.5 transition-colors ${
                         isBeingEdited
-                          ? 'text-amber-800 bg-amber-100 ring-1 ring-amber-400'
-                          : 'text-neutral-500 hover:text-amber-700 hover:bg-amber-50'
+                          ? 'bg-amber-200 text-amber-950 border-amber-600'
+                          : 'bg-white hover:bg-neutral-100 text-neutral-900 border-neutral-300'
                       }`}
                     >
-                      <Pencil className="w-3.5 h-3.5" />
+                      <Pencil className="w-4 h-4 text-neutral-800" />
+                      <span>Editar</span>
                     </button>
+
                     <button
                       type="button"
                       onClick={() => onGoToCompare(r.productKey)}
                       title="Comparar este producto"
-                      className="p-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+                      className="min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl border-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border-emerald-700 font-bold text-base flex items-center justify-center gap-1.5 transition-colors"
                     >
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <ArrowRight className="w-4 h-4 text-emerald-900" />
+                      <span>Comparar</span>
                     </button>
+
                     <button
                       type="button"
                       onClick={() => onDeletePrice(r.id)}
                       title="Eliminar este precio"
-                      className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      className="min-h-[44px] min-w-[44px] p-2 rounded-xl border-2 bg-white hover:bg-red-50 text-red-800 border-neutral-300 hover:border-red-400 flex items-center justify-center transition-colors"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

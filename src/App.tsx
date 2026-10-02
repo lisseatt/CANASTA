@@ -180,54 +180,55 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-neutral-100 flex flex-col font-sans">
-      {/* Contenedor ergonómico mobile-first (máximo 480px) */}
-      <div className="w-full max-w-md mx-auto flex-1 flex flex-col pb-24 px-4 pt-3">
-        {/* Cabecera compacta de la app */}
-        <header className="flex items-center justify-between py-3 mb-2 border-b border-neutral-200/80">
+      {/* Contenedor adaptado desde 320px de ancho */}
+      <div className="w-full max-w-md mx-auto flex-1 flex flex-col pb-24 px-2.5 sm:px-4 pt-3">
+        {/* Cabecera con alto contraste y texto >= 16px */}
+        <header className="flex items-center justify-between py-3 mb-2 border-b-2 border-neutral-300">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-sm shadow-sm">
-              <ShoppingBag className="w-4 h-4" />
+            <div className="w-10 h-10 rounded-xl bg-emerald-800 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+              <ShoppingBag className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-base font-extrabold tracking-tight text-neutral-900 leading-tight">
+              <h1 className="text-xl font-black tracking-tight text-neutral-950 leading-tight">
                 CANASTA
               </h1>
-              <p className="text-[11px] text-neutral-500 font-medium">
-                Comparador de precios de la cuadra
+              <p className="text-base text-neutral-700 font-bold">
+                Comparador de la cuadra
               </p>
             </div>
           </div>
 
+          {/* Botones secundarios de cabecera */}
           <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => setShowBackupModal(true)}
-              title="Respaldo y Opciones de Datos"
-              className="flex items-center gap-1 text-[11px] font-semibold text-neutral-700 hover:text-neutral-900 bg-white hover:bg-neutral-50 border border-neutral-200 px-2.5 py-1.5 rounded-lg transition-colors shadow-2xs"
+              title="Copia de seguridad"
+              className="min-h-[44px] flex items-center gap-1.5 text-base font-bold text-neutral-950 bg-white hover:bg-neutral-100 border-2 border-neutral-300 px-3 py-2 rounded-xl transition-colors"
             >
-              <Database className="w-3.5 h-3.5 text-emerald-700" />
-              <span>Respaldo</span>
+              <Database className="w-4 h-4 text-emerald-800" />
+              <span>Copia</span>
             </button>
 
             <button
               type="button"
               onClick={handleResetData}
-              title="Reiniciar datos de prueba"
-              className="flex items-center gap-1 text-[11px] text-neutral-500 hover:text-neutral-800 bg-white hover:bg-neutral-50 border border-neutral-200 p-1.5 rounded-lg transition-colors"
+              title="Reiniciar a datos de prueba"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-neutral-700 hover:text-neutral-950 bg-white hover:bg-neutral-100 border-2 border-neutral-300 rounded-xl transition-colors"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-neutral-400" />
+              <RotateCcw className="w-4 h-4" />
             </button>
           </div>
         </header>
 
-        {/* Notificación flotante de respaldo */}
+        {/* Notificación visible sin tecnicismos */}
         {backupNotice && (
-          <div className="mb-3 p-2.5 bg-neutral-900 text-white text-xs rounded-xl flex items-center justify-between animate-fade-in">
+          <div className="mb-3 p-3 bg-neutral-950 text-white text-base font-bold rounded-xl flex items-center justify-between shadow-md">
             <span>{backupNotice}</span>
             <button
               type="button"
               onClick={() => setBackupNotice(null)}
-              className="text-neutral-400 hover:text-white ml-2 text-xs"
+              className="text-neutral-300 hover:text-white ml-2 text-lg font-bold min-h-[44px] min-w-[36px] flex items-center justify-center"
             >
               ✕
             </button>
@@ -272,47 +273,47 @@ export default function App() {
         </main>
       </div>
 
-      {/* Modal de Gestión de Respaldo */}
+      {/* Modal de Copia de Seguridad sin tecnicismos */}
       {showBackupModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl border border-neutral-200 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3">
+          <div className="bg-white rounded-2xl w-full max-w-[310px] sm:max-w-sm p-4 sm:p-5 shadow-2xl border-2 border-neutral-300 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b-2 border-neutral-200">
               <div className="flex items-center gap-2">
-                <Database className="w-4 h-4 text-emerald-700" />
-                <h3 className="text-sm font-bold text-neutral-900">
-                  Respaldo de Datos (JSON)
+                <Database className="w-5 h-5 text-emerald-800" />
+                <h3 className="text-lg font-extrabold text-neutral-950">
+                  Copia de tus datos
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowBackupModal(false)}
-                className="text-neutral-400 hover:text-neutral-700 p-1 rounded-lg"
+                className="text-neutral-700 hover:text-neutral-950 min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-neutral-600 leading-relaxed">
-              Tus precios y lista están guardados en el navegador (<strong className="font-semibold text-neutral-800">localStorage</strong>). Si cambiás de celular o limpiás el navegador, podés descargar un archivo de copia y restaurarlo cuando quieras.
+            <p className="text-base text-neutral-800 font-medium leading-relaxed">
+              Tus precios y tu lista están guardados en este teléfono. Si cambiás de celular o querés una copia de seguridad, podés descargar un archivo y volver a abrirlo cuando quieras.
             </p>
 
-            <div className="space-y-2 pt-1">
+            <div className="space-y-3 pt-1">
               <button
                 type="button"
                 onClick={handleExportBackup}
-                className="w-full min-h-[44px] px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-2xs"
+                className="w-full min-h-[48px] px-3.5 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-base font-extrabold flex items-center justify-center gap-2 transition-colors border-2 border-emerald-950 shadow-sm"
               >
-                <Download className="w-4 h-4" />
-                <span>Exportar y Descargar JSON</span>
+                <Download className="w-5 h-5" />
+                <span>Guardar archivo de copia</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full min-h-[44px] px-3 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors border border-neutral-200"
+                className="w-full min-h-[48px] px-3.5 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-950 rounded-xl text-base font-extrabold flex items-center justify-center gap-2 transition-colors border-2 border-neutral-300"
               >
-                <Upload className="w-4 h-4 text-neutral-600" />
-                <span>Importar / Restaurar JSON</span>
+                <Upload className="w-5 h-5 text-neutral-700" />
+                <span>Abrir archivo de copia</span>
               </button>
 
               <input
@@ -324,20 +325,20 @@ export default function App() {
               />
             </div>
 
-            <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
+            <div className="pt-3 border-t-2 border-neutral-200 flex items-center justify-between">
               <button
                 type="button"
                 onClick={handleClearAll}
-                className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1 font-medium"
+                className="min-h-[44px] text-base text-red-800 hover:text-red-950 font-extrabold flex items-center gap-1.5"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
                 <span>Borrar todo</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setShowBackupModal(false)}
-                className="text-xs text-neutral-500 hover:text-neutral-800"
+                className="min-h-[44px] px-3 text-base text-neutral-700 hover:text-neutral-950 font-bold"
               >
                 Cerrar
               </button>

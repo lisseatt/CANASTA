@@ -24,73 +24,65 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   return (
     <nav
       aria-label="Navegación principal"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-200/90 pb-[env(safe-area-inset-bottom)]"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t-2 border-neutral-300 pb-[env(safe-area-inset-bottom)] shadow-lg"
     >
-      <div className="max-w-md mx-auto grid grid-cols-3 h-16 items-center px-2">
+      <div className="max-w-md mx-auto grid grid-cols-3 h-18 items-center px-1">
         {/* Tab 1: Registrar */}
         <button
           type="button"
           onClick={() => onChangeTab('register')}
-          className={`min-h-[48px] flex flex-col items-center justify-center transition-colors rounded-xl relative ${
+          className={`min-h-[52px] flex flex-col items-center justify-center transition-colors rounded-xl mx-0.5 ${
             activeTab === 'register'
-              ? 'text-emerald-700 font-semibold'
-              : 'text-neutral-500 hover:text-neutral-900 font-medium'
+              ? 'text-neutral-950 font-extrabold bg-emerald-50 border-b-4 border-emerald-800'
+              : 'text-neutral-700 font-bold hover:text-neutral-950'
           }`}
         >
-          <PlusCircle className={`w-5 h-5 ${activeTab === 'register' ? 'stroke-[2.5]' : 'stroke-2'}`} />
-          <span className="text-[11px] tracking-tight mt-1 whitespace-nowrap">
-            1. Registrar
+          <PlusCircle className={`w-5 h-5 ${activeTab === 'register' ? 'stroke-[2.5] text-emerald-800' : 'stroke-2 text-neutral-600'}`} />
+          <span className="text-base tracking-tight leading-tight mt-0.5 whitespace-nowrap">
+            Registrar
           </span>
-          {activeTab === 'register' && (
-            <span className="absolute bottom-1 w-1 h-1 bg-emerald-700 rounded-full" />
-          )}
         </button>
 
         {/* Tab 2: Comparar */}
         <button
           type="button"
           onClick={() => onChangeTab('compare')}
-          className={`min-h-[48px] flex flex-col items-center justify-center transition-colors rounded-xl relative ${
+          className={`min-h-[52px] flex flex-col items-center justify-center transition-colors rounded-xl mx-0.5 ${
             activeTab === 'compare'
-              ? 'text-emerald-700 font-semibold'
-              : 'text-neutral-500 hover:text-neutral-900 font-medium'
+              ? 'text-neutral-950 font-extrabold bg-emerald-50 border-b-4 border-emerald-800'
+              : 'text-neutral-700 font-bold hover:text-neutral-950'
           }`}
         >
-          <ArrowLeftRight className={`w-5 h-5 ${activeTab === 'compare' ? 'stroke-[2.5]' : 'stroke-2'}`} />
-          <span className="text-[11px] tracking-tight mt-1 whitespace-nowrap">
-            2. Comparar
+          <ArrowLeftRight className={`w-5 h-5 ${activeTab === 'compare' ? 'stroke-[2.5] text-emerald-800' : 'stroke-2 text-neutral-600'}`} />
+          <span className="text-base tracking-tight leading-tight mt-0.5 whitespace-nowrap">
+            Comparar
           </span>
-          {activeTab === 'compare' && (
-            <span className="absolute bottom-1 w-1 h-1 bg-emerald-700 rounded-full" />
-          )}
         </button>
 
         {/* Tab 3: Lista de compra */}
         <button
           type="button"
           onClick={() => onChangeTab('shoppingList')}
-          className={`min-h-[48px] flex flex-col items-center justify-center transition-colors rounded-xl relative ${
+          className={`min-h-[52px] flex flex-col items-center justify-center transition-colors rounded-xl mx-0.5 relative ${
             activeTab === 'shoppingList'
-              ? 'text-emerald-700 font-semibold'
-              : 'text-neutral-500 hover:text-neutral-900 font-medium'
+              ? 'text-neutral-950 font-extrabold bg-emerald-50 border-b-4 border-emerald-800'
+              : 'text-neutral-700 font-bold hover:text-neutral-950'
           }`}
         >
-          <div className="relative">
-            <ShoppingBag className={`w-5 h-5 ${activeTab === 'shoppingList' ? 'stroke-[2.5]' : 'stroke-2'}`} />
+          <div className="relative flex items-center justify-center">
+            <ShoppingBag className={`w-5 h-5 ${activeTab === 'shoppingList' ? 'stroke-[2.5] text-emerald-800' : 'stroke-2 text-neutral-600'}`} />
             {shoppingCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 bg-emerald-600 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center tabular-nums">
+              <span className="absolute -top-2 -right-3.5 bg-emerald-800 text-white text-base font-extrabold px-1.5 py-0.2 rounded-full tabular-nums border border-white">
                 {shoppingCount}
               </span>
             )}
           </div>
-          <span className="text-[11px] tracking-tight mt-1 whitespace-nowrap">
-            3. Lista Compra
+          <span className="text-base tracking-tight leading-tight mt-0.5 whitespace-nowrap">
+            Lista
           </span>
-          {activeTab === 'shoppingList' && (
-            <span className="absolute bottom-1 w-1 h-1 bg-emerald-700 rounded-full" />
-          )}
         </button>
       </div>
     </nav>
   );
 };
+
