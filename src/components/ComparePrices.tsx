@@ -19,6 +19,7 @@ import {
   ShoppingCart,
   Award
 } from 'lucide-react';
+import { SmartSavingsAdvisor } from './SmartSavingsAdvisor';
 
 interface ComparePricesProps {
   prices: PriceRecord[];
@@ -302,6 +303,9 @@ export const ComparePrices: React.FC<ComparePricesProps> = ({
           </button>
         </section>
       )}
+
+      {/* Componente de Inteligencia Artificial Gemini para ahorro integral */}
+      <SmartSavingsAdvisor prices={prices} onGoToRegister={() => onGoToRegisterWithProduct('')} />
 
       {/* Lista general de productos */}
       <section className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border-2 border-neutral-300">

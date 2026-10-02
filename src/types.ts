@@ -29,3 +29,28 @@ export interface ShoppingItem {
 }
 
 export type ActiveTab = 'register' | 'compare' | 'shoppingList';
+
+export interface ItemRecommendation {
+  productName: string;
+  recommendedStore: string;
+  bestPrice: number;
+  alternativePrice: number;
+  unitSavings: number;
+  tip: string;
+}
+
+export interface StoreStop {
+  storeName: string;
+  itemsToBuy: string[];
+  subtotal: number;
+}
+
+export interface SmartRecommendationResult {
+  totalEstimatedWithSavings: number;
+  totalWithoutOptimizing: number;
+  estimatedSavingsAmount: number;
+  savingsPercentage: number;
+  itemRecommendations: ItemRecommendation[];
+  storeRoute: StoreStop[];
+  summaryInsight: string;
+}
