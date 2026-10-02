@@ -1,0 +1,7 @@
+{
+  "name": "CANASTA - Comparador de Precios de Barrio",
+  "description": "Compara precios de productos entre tiendas cercanas y arma tu lista de compras inteligente para ahorrar.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
